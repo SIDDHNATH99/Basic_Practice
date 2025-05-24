@@ -7,15 +7,14 @@ app.use(express.json());
 
 const JWT_SECRET = 'asecretkey'; // use process.env.JWT_SECRET in real apps
 
-// In-memory user storage (Replace with DB in production)
 const users = [];
 
-// Helper: Generate JWT
+// create jwt token using generateToken
 const generateToken = (user) => {
     return jwt.sign({ id: user.id, username: user.username }, JWT_SECRET, { expiresIn: '1h' });
 };
 
-// Middleware: Protect Routes
+// authenticate jwt token using authenticateJWT 
 const authenticateJWT = (req, res, next) => {
     
     const authHeader = req.headers.authorization;
@@ -39,13 +38,20 @@ const authenticateJWT = (req, res, next) => {
 
 // Route: Signup
 app.post('/signup', async (req, res) => {
+
     const { username, password } = req.body;
 
     const existing = users.find(u => u.username === username);
-    if (existing) return res.status(400).json({ message: 'User already exists' });
 
+    if (existing) return res.status(200).json({ message: 'User already exists' });
+
+    // converts plain text password into hashedPassword
     const hashedPassword = await bcrypt.hash(password, 10);
+
     const user = { id: users.length + 1, username, password: hashedPassword };
+    
+    // console.log("user" , user)
+
     users.push(user);
 
     const token = generateToken(user);
@@ -55,6 +61,7 @@ app.post('/signup', async (req, res) => {
 
 // Route: Login
 app.post('/login', async (req, res) => {
+    
     const { username, password } = req.body;
 
     const user = users.find(u => u.username === username);
